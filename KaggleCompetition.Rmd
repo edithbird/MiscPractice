@@ -1,0 +1,449 @@
+---
+title: "NewTarGz"
+author: "Christine Iyer"
+date: "July 15, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(knitr)
+library(dplyr)
+library(rvest)
+library(ggplot2)
+```
+
+```{r}
+#untar("instacart.tar.gz")
+```
+
+###Most popular groceries from "shareranks"
+
+```{r}
+groceryURL <- read_html("http://shareranks.com/15836,Most-Common-Foods-Purchased-at-a-Grocery-Store")
+popularGroceries <- groceryURL %>% html_nodes(".info_name") %>% html_text()  %>% 
+  gsub('[\r\n\t]', '', .)
+class(popularGroceries)
+
+```
+
+
+###Splurge items from epicurious
+
+```{r}
+splurgeURL <- read_html("http://www.epicurious.com/expert-advice/best-grocery-store-splurges-article")
+splurgeGroceries <- splurgeURL %>% html_nodes(".article-body h4") %>% html_text()
+splurgeGroceries
+```
+
+###Recyclable
+
+```{r}
+recycleURL <- read_html("http://www.motherjones.com/environment/2015/12/these-15-grocery-store-items-are-not-recyclable/")
+recycleNotPackaging <- recycleURL %>% html_nodes("strong") %>% html_text()
+recycleNotPackaging <- recycleNotPackaging[-c(2,6,11,15,17)]
+recycleNotPackaging
+```
+
+
+```{r}
+
+## or, if you just want to extract the target file:
+
+X <- read.csv("order_products__prior.csv", header = T)
+
+c <- read.csv("orders.csv")
+
+Products <- read.csv("products.csv", header = T)
+
+aa <- read.csv("aisles.csv", header = T)
+
+train <- read.csv("order_products__train.csv", header = T)
+
+```
+
+
+```{r}
+head(X)
+dim(X)
+```
+
+```{r}
+head(c)
+dim(c)
+```
+
+```{r}
+head(Products)
+```
+
+```{r}
+dim(aa)
+head(aa)
+```
+
+```{r}
+head(train)
+```
+In 2015 Instacart had 206,209 customers place 3,421,083 orders  
+
+```{r}
+#m is c with the NA omitted. The NA is their first order. So there are actually no NA values. This can be deduced from the summary. 
+m <- c %>% na.omit()
+dim(m)
+ggplot(c,aes(x = factor(days_since_prior_order))) + geom_bar()
+byCustomerOrder <- m %>% group_by(user_id) %>% summarise(numberOrders = n())
+summary(byCustomerOrder)
+dim(c)
+sum(is.na(c))
+head(c, 25)
+summary(c)
+summary(m)
+
+```
+
+
+Want to make an interactive dataset where a customer's activity can be isolated from the others and it will show all of their orders. 
+
+
+for(i in unique(UniqueData$State)){
+  
+  
+  newDS <- UniqueData %>% filter(State == i)
+  
+  print(head(newDS))
+  hist(newDS$Number.of.Prescriptions, main = paste(i, "'s Rx Frequency"))
+  identify(newDS$Number.of.Prescriptions)
+  
+}
+
+```{r}
+for(i in unique(m$user_id)){
+  newDSm <- m %>% filter(user_id == i)
+  identity(newDSm$days_since_prior_order)
+  
+  
+}
+```
+
+
+###Number of times each product is entered in the dataset
+
+There are 32,434,489 entries in this dataset. There are 49,667 items that get reordered. 
+
+
+
+```{r}
+XX <- X %>% group_by(product_id) %>% summarise(countEntries = n()) %>% arrange(desc(countEntries))
+mean(XX$countEntries)
+head(XX)
+dim(XX)
+49667/32434489
+```
+
+
+###Number of times product was reordered. 
+
+```{r}
+XXX <- X %>% group_by(product_id) %>% summarise(countReordered = sum(reordered)) %>% arrange(countReordered)
+head(XXX)
+dim(XXX)
+```
+
+###Percent of reorders per item
+
+First join the precious 2 tables to put the number of entries and the number of times an entry was reordered side by side. 
+
+```{r}
+XXXX <- inner_join(XX, XXX)
+head(XXXX)
+dim(XXXX)
+```
+
+Which products never got reordered?
+There were 4,372 items that were never reordered. 
+
+```{r}
+neverReordered <- XXX %>% filter(countReordered == 0)
+dim(neverReordered)
+head(neverReordered)
+```
+
+
+```{r}
+XXXXX <- XXXX %>% mutate(PercentReordered = countReordered/countEntries) %>% arrange(desc(PercentReordered))
+head(XXXXX)
+dim(XXXXX)
+```
+
+Distribution of reorders
+
+```{r}
+head(XXXXX)
+boxplot(XXXXX$PercentReordered, ylab = "Percent of items reordered", main = "Spread of Reorders")
+
+hist(XXXXX$PercentReordered, xlab = "Percentage of items that are reordered", ylab = "Frequency of reorders", main = "Frequency Distribution of Items Reordered")
+```
+
+
+Which products were reordered over 80% of the time?
+
+```{r}
+XXXXXX <- XXXXX %>% filter(PercentReordered >= 0.8)
+dim(XXXXXX)
+head(XXXXXX)
+```
+
+###What percent of products were reordered over 80 percent of the time?
+
+```{r}
+round(dim(XXXXXX)/dim(XXXXX), digits = 3)
+```
+Product Names
+
+```{r}
+Products <- read.csv("products.csv", header = T)
+head(Products)
+dim(Products)
+```
+
+###What are the products that were reordered over 80% of the time?
+
+
+```{r}
+XXXXXXX <- inner_join(Products, XXXXXX)
+kable(head(XXXXXXX %>% arrange(desc(countReordered))))
+head(XXXXXXX)
+```
+
+###A list of the most popular grocery items
+
+```{r}
+library(stringr)
+mostPopularGroceries <- c("BANANA",
+"BOTTLE",
+"DEPOSIT",
+"CUCUMBER",
+"CREAM CHEESE",
+"PEPPER",
+"BUTTER",
+"CARROTS",
+"POTATO",
+"AVOCADOS"
+) 
+mostPopularGroceries <-  str_to_title(mostPopularGroceries)
+class(mostPopularGroceries)
+
+RandomGroceries <- c("Pasta", "Chocolate", "Milk", "Almonds", "Nuts")
+class(RandomGroceries)
+RandomGroceries <- paste(RandomGroceries, collapse=" | ")
+RandomGroceries
+```
+
+```{r}
+XXXXXXXX <- XXXXXXX %>% filter(product_name %in% mostPopularGroceries)
+XXXXXXXX
+
+XXXXXXXX <- XXXXXXX %>% filter(grepl("Chocolate | Pasta | Milk | Almonds | Nuts | Bananas", product_name))
+XXXXXXXX
+XXXXXXX %>% filter(product_name %in% RandomGroceries)
+XXXXXXX %>% filter(product_name %in% mostPopularGroceries)
+
+Milk <- XXXXXXX %>% filter(grepl("Milk", product_name))
+Chocolate <- XXXXXXX %>% filter(grepl("Chocolate", product_name))
+Milk
+Chocolate
+```
+
+###Aisles of the most reordered items. 
+There are 134 different aisles. 
+
+```{r}
+#aisles aa
+aa <- read.csv("aisles.csv", header = T)
+dim(aa)
+#there are 623 items in aisle 17
+aa %>% filter(aisle_id == 17)
+dim(Products %>% filter(aisle_id == 17))
+head(Products%>% filter(aisle_id == 17))
+#to check which aisles are busiest
+w <- inner_join(Products, XXXXXXX)
+r <- inner_join(w,aa)
+head(r)
+r %>% group_by(aisle_id, aisle) %>% summarise(sumofReorders = sum(countReordered)) %>% arrange(desc(sumofReorders))
+
+```
+
+```{r}
+train <- read.csv("order_products__train.csv", header = T)
+head(train %>% group_by(order_id) %>% summarise(numberItems = n()) %>% arrange(desc(numberItems)), 25)
+dim(train %>% group_by(order_id) %>% summarise(numberItems = n()) %>% arrange(desc(numberItems)))
+
+NumberItems <- train %>% group_by(order_id) %>% summarise(numberItems = n()) %>% arrange(desc(numberItems))
+head(NumberItems)
+dim(NumberItems)
+```
+
+###Days_since_prior_order. Load Data
+
+```{r}
+
+head(c)
+summary(c)
+sum(is.na(c))
+ggplot(c, aes(x=days_since_prior_order)) + geom_density()
+ProductsDays <- inner_join(c, train)
+ProductsDays <- inner_join(ProductsDays, Products)
+ProductsDays <- inner_join(ProductsDays, aa)
+ProductsDays <- inner_join(ProductsDays, X)
+dim(ProductsDays)
+head(ProductsDays)
+```
+###Who orders?
+
+```{r}
+whoOrders <- c %>% group_by(user_id) %>% summarise(NumberOrders = n()) %>% arrange(desc(NumberOrders)) %>% filter(NumberOrders > 90 & NumberOrders < 100)
+head(whoOrders)
+```
+
+
+```{r}
+mostOrders <- c %>% group_by(user_id) %>% summarise(NumberOrders = n()) %>% arrange(desc(NumberOrders))
+head(mostOrders)
+
+dim(mostOrders)
+ggplot(mostOrders, aes(x = NumberOrders))+ geom_bar()
+ggplot(mostOrders, aes(x=NumberOrders)) + geom_density()
+```
+
+
+```{r}
+hist(mostOrders$NumberOrders, main = "Reorder Frequency", xlab = "Number of Reorders", ylab = "Frequency of Reorders")
+
+head(r)
+head(XXXXX)
+v <- inner_join(Products, XXXXX)
+v <-  inner_join(v, aa)
+head(v)
+dim(v)
+range(v$countReordered)
+```
+
+
+```{r, fig.height=25, fig.width=10}
+ggplot(r, aes(x = PercentReordered, group = aisle, fill = aisle)) + geom_histogram(bins = 6)
+head(r)
+```
+
+
+How often does each customer order
+
+```{r}
+howOften <- c %>% group_by(user_id) %>% summarise(days_since_prior_orderMean = mean(days_since_prior_order)) %>% arrange(desc(days_since_prior_orderMean)) 
+```
+
+```{r}
+
+head(howOften)
+# %>% filter(NumberOrders > 90 & NumberOrders < 100)
+dim(whoOrders)
+head(c)
+head(whoOrders, 25)
+
+
+```
+
+
+
+###Aisles of items that were never reordered
+The 4,372 that were never reordered
+
+```{r}
+head(neverReordered)
+dim(neverReordered)
+head(Products)
+aislesNeverReordered <- inner_join(neverReordered, Products )
+aislesNeverReordered <- inner_join(aislesNeverReordered, aa)
+head(aislesNeverReordered)
+```
+
+
+###the items that are never reordered are spread over 131 aisles
+
+```{r}
+aislesZero <- aislesNeverReordered %>% select(product_id, product_name, aisle_id, aisle)
+head(aislesZero)
+aislesZero %>% group_by(aisle) %>% summarise(numberItemsintheAisle = n()) %>% arrange(desc(numberItemsintheAisle))
+names(aislesZero)
+dim(aislesZero)
+aislesZero %>% filter(aisle == "grains rice dried goods")
+
+
+```
+
+```{r}
+departments <- read.csv("departments.csv", header = T)
+head(departments)
+
+head(Products)
+```
+
+Departments and Products
+
+```{r}
+DandP <- inner_join(Products, departments)
+head(DandP)
+dim(DandP)
+```
+Mean perecent of items reordered per department
+
+```{r}
+DPV <- inner_join(DandP,v)
+head(DPV)
+dim(DPV)
+kable(DPV %>% group_by(department) %>% summarise(numberItemsperDept = n(), meanPctReorders = round(mean(PercentReordered), digits = 3), meanNumberReorders = round(mean(countReordered), digits = 0)) %>% arrange(desc(meanNumberReorders)))
+```
+
+Busiest days of the week
+
+```{r}
+
+```
+
+
+What items are ordered on what days
+
+```{r}
+dowVector <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+d <- read.csv("orders.csv")
+kable(head(d))
+e <- d
+e$order_dow <- factor(e$order_dow, labels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"),
+            ordered = TRUE)
+kable(head(e))
+str(e)
+head(d %>% mutate(Day = (ifelse(order_dow == 0, "Sunday", ifelse(order_dow ==1, "Monday", ifelse(order_dow == 2, "Tuesday", ifelse(order_dow == 3, "Wednesday", ifelse(order_dow == 4, "Thursday", ifelse(order_dow == 5, "Friday", "Saturday")))))))))
+range(d$order_hour_of_day)
+hist(d$order_hour_of_day, main = "Most orders are between 10-4")
+hist(d$order_dow, xaxt = "n", xlab = "", freq = F)
+
+
+
+h = hist(d$order_dow)
+h$density = h$counts/sum(h$counts)
+plot(h,freq=FALSE, ylim = c(0, 0.20), las = 2, xaxt = "n", xlab = "", lwd = 2, lend="square")
+axis(side = 1,at=seq(0,6, 1),labels = dowVector, las = 2)
+
+```
+
+```{r}
+head(c)
+daysSincePrior <- hist(c$days_since_prior_order)
+daysSincePrior$density = daysSincePrior$counts/sum(daysSincePrior$counts)
+plot(daysSincePrior,freq=FALSE, ylim = c(0, 0.12), las = 2, xaxt = "n",  lwd = 2, lend="square", xlab = "Days Since Prior Order", main = "Frequency of Days Between Previous Order ")
+axis(side = 1, las = 2)
+```
+
