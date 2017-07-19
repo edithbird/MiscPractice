@@ -95,10 +95,14 @@ In 2015 Instacart had 206,209 customers place 3,421,083 orders
 
 ```{r}
 #m is c with the NA omitted. The NA is their first order. So there are actually no NA values. This can be deduced from the summary. 
+head(c, 50)
 m <- c %>% na.omit()
 dim(m)
 ggplot(c,aes(x = factor(days_since_prior_order))) + geom_bar()
+#m$user_id <-  as.factor(m$user_id)
+m[c(700:786),]
 byCustomerOrder <- m %>% group_by(user_id) %>% summarise(numberOrders = n())
+head(byCustomerOrder, 20)
 summary(byCustomerOrder)
 dim(c)
 sum(is.na(c))
@@ -109,7 +113,53 @@ summary(m)
 ```
 
 
+
 ```{r}
+set.seed(123)
+sampleNumbers <- sample(1:200000, replace=F, 100) 
+sampleNumbers <- as.character(sampleNumbers)
+m$user_id <- as.character(m$user_id)
+head(m)
+
+
+
+
+```
+
+
+```{r}
+sampleUsers <- m %>% filter(user_id %in% sampleNumbers)
+dim(sampleUsers)
+sampleUsers <- sampleUsers %>% mutate(User_ID = paste("User", user_id, sep = "_"))
+head(sampleUsers)
+sampleUsers %>% group_by(user_id) %>% summarise(count = n())
+newSampleUsers <- sampleUsers$User_ID
+```
+
+```{r}
+head(newSampleUsers)
+```
+
+206209 user_id
+
+```{r}
+users_split <- split(sampleUsers, sampleUsers$User_ID)
+
+
+
+for (i in 1:length(users_split)) {
+  assign(newSampleUsers[i], users_split[[i]])
+}
+
+User_26128
+```
+
+
+```{r}
+tail(byCustomerOrder)
+byCustomerOrder <- byCustomerOrder %>% mutate(User = paste(paste("ID", user_id, sep = "_")))
+namesID <- byCustomerOrder$User
+#byCustomerOrder is the new names vector
 sampleUsers <- sample_n(m, 10)
 
 ```
@@ -127,6 +177,7 @@ for(i in unique(UniqueData$State)){
   hist(newDS$Number.of.Prescriptions, main = paste(i, "'s Rx Frequency"))
   identify(newDS$Number.of.Prescriptions)
   
+  
 }
 
 ```{r}
@@ -139,20 +190,7 @@ for(i in unique(UniqueData$State)){
 # }
 ```
 
-206209 user_id
-```{r}
-users_split <- split(sampleUsers, sampleUsers$user_id)
-length(users_split)
-names <- c("one", "two", "three", "four", "five", "six", "seven", "eight", "none", "ten")
-head(names)
 
-for (i in 1:length(users_split)) {
-  assign(names[i], users_split[[i]])
-}
-
-none
-
-```
 
 
 ###Number of times each product is entered in the dataset
