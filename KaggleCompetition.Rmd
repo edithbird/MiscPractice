@@ -90,6 +90,9 @@ head(train)
 ```
 In 2015 Instacart had 206,209 customers place 3,421,083 orders  
 
+
+
+
 ```{r}
 #m is c with the NA omitted. The NA is their first order. So there are actually no NA values. This can be deduced from the summary. 
 m <- c %>% na.omit()
@@ -102,6 +105,12 @@ sum(is.na(c))
 head(c, 25)
 summary(c)
 summary(m)
+
+```
+
+
+```{r}
+sampleUsers <- sample_n(m, 10)
 
 ```
 
@@ -121,12 +130,28 @@ for(i in unique(UniqueData$State)){
 }
 
 ```{r}
-for(i in unique(m$user_id)){
-  newDSm <- m %>% filter(user_id == i)
-  identity(newDSm$days_since_prior_order)
-  
-  
+# User_ID <- unique(m$user_id)
+# for(i in 1:length(m$user_id)){
+#   newDSm <- m[m$user_id == UserID[i],]
+#   identity(newDSm$days_since_prior_order)
+#   
+#   
+# }
+```
+
+206209 user_id
+```{r}
+users_split <- split(sampleUsers, sampleUsers$user_id)
+length(users_split)
+names <- c("one", "two", "three", "four", "five", "six", "seven", "eight", "none", "ten")
+head(names)
+
+for (i in 1:length(users_split)) {
+  assign(names[i], users_split[[i]])
 }
+
+none
+
 ```
 
 
