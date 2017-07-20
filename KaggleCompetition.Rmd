@@ -86,7 +86,8 @@ head(aa)
 ```
 
 ```{r}
-head(train)
+head(train, 30)
+train <- train %>% mutate(factorProdID = as.factor(product_id))
 ```
 In 2015 Instacart had 206,209 customers place 3,421,083 orders  
 
@@ -113,7 +114,8 @@ summary(m)
 ```
 
 ```{r}
-
+userFactor <- inner_join(m, train)
+head(userFactor, 50)
 ```
 
 
@@ -125,13 +127,13 @@ m$user_id <- as.character(m$user_id)
 head(m)
 
 
-m <- m %>% group_by(user_id) %>% mutate(timeLine = cumsum(days_since_prior_order))
+userFactor <- userFactor %>% group_by(user_id) %>% mutate(timeLine = cumsum(days_since_prior_order))
 
 ```
 
 
 ```{r}
-sampleUsers <- m %>% filter(user_id %in% sampleNumbers)
+sampleUsers <- userFactor %>% filter(user_id %in% sampleNumbers)
 head(sampleUsers)
 # sampleUsers <- sampleUsers %>% mutate(User_ID = paste("User", user_id, sep = "_"))
 head(sampleUsers, 25)
@@ -182,7 +184,7 @@ for (i in 1:length(users_split)) {
   
 }
   
-  return(ggplot(x%>% mutate(timeline = cumsum(x$days_since_prior_order)), aes(x = timeline, y = order_dow)) + geom_line() + geom_point())
+  return(ggplot(x%>% mutate(timeline = cumsum(x$days_since_prior_order)), aes(x = timeline, y = count(factorProdID))) + geom_line() + geom_point())
   
  
 }
@@ -190,9 +192,9 @@ for (i in 1:length(users_split)) {
 
 
 ```{r}
-square(User_96)
-circle(User_96)
-rectangle(User_96)
+square(User_90)
+circle(User_90)
+rectangle(User_90)
 ```
 
 
