@@ -115,19 +115,26 @@ summary(m)
 
 ```{r}
 userFactor <- inner_join(m, train)
-head(userFactor, 50)
+head(userFactor)
+dim(userFactor)
+userFactor$product_id <- as.character(userFactor$product_id)
+v <- userFactor %>% group_by(order_id) %>% tally()
+v <- v %>% rename(numberItemsinOrder = n)
+head(v, 10)
 ```
 
 
 ```{r}
 set.seed(123)
-sampleNumbers <- sample(1:200000, replace=F, 100) 
+sampleNumbers <- sample(1:200000, replace=F, 100)
+#sampleNumbers <- inner_join(sampleNumbers, v)
 sampleNumbers <- as.character(sampleNumbers)
 m$user_id <- as.character(m$user_id)
-head(m)
+head(v)
 
-
+userFactor <- inner_join(userFactor, v)
 userFactor <- userFactor %>% group_by(user_id) %>% mutate(timeLine = cumsum(days_since_prior_order))
+head(userFactor)
 
 ```
 
@@ -136,8 +143,8 @@ userFactor <- userFactor %>% group_by(user_id) %>% mutate(timeLine = cumsum(days
 sampleUsers <- userFactor %>% filter(user_id %in% sampleNumbers)
 head(sampleUsers)
 # sampleUsers <- sampleUsers %>% mutate(User_ID = paste("User", user_id, sep = "_"))
-head(sampleUsers, 25)
-#sampleUsers %>% group_by(user_id) %>% summarise(count = n())
+dim(sampleUsers)
+sampleUsers %>% group_by(user_id) %>% summarise(count = n())
 #newSampleUsers <- sampleUsers$User_ID
 
 xsample <- paste("User", seq(1:100), sep = "_")
