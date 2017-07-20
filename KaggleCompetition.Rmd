@@ -112,6 +112,9 @@ summary(m)
 
 ```
 
+```{r}
+
+```
 
 
 ```{r}
@@ -122,36 +125,82 @@ m$user_id <- as.character(m$user_id)
 head(m)
 
 
-
+m <- m %>% group_by(user_id) %>% mutate(timeLine = cumsum(days_since_prior_order))
 
 ```
 
 
 ```{r}
 sampleUsers <- m %>% filter(user_id %in% sampleNumbers)
-dim(sampleUsers)
-sampleUsers <- sampleUsers %>% mutate(User_ID = paste("User", user_id, sep = "_"))
 head(sampleUsers)
-sampleUsers %>% group_by(user_id) %>% summarise(count = n())
-newSampleUsers <- sampleUsers$User_ID
+# sampleUsers <- sampleUsers %>% mutate(User_ID = paste("User", user_id, sep = "_"))
+head(sampleUsers, 25)
+#sampleUsers %>% group_by(user_id) %>% summarise(count = n())
+#newSampleUsers <- sampleUsers$User_ID
+
+xsample <- paste("User", seq(1:100), sep = "_")
 ```
 
+
 ```{r}
-head(newSampleUsers)
+sampleUsers <- sampleUsers %>% mutate(Day = (ifelse(order_dow == 0, "Sunday", ifelse(order_dow ==1, "Monday", ifelse(order_dow == 2, "Tuesday", ifelse(order_dow == 3, "Wednesday", ifelse(order_dow == 4, "Thursday", ifelse(order_dow == 5, "Friday", "Saturday"))))))))
+head(sampleUsers, 50)
 ```
 
-206209 user_id
+
 
 ```{r}
-users_split <- split(sampleUsers, sampleUsers$User_ID)
+users_split <- split(sampleUsers, sampleUsers$user_id)
 
 
-
+square <- function(x){
 for (i in 1:length(users_split)) {
-  assign(newSampleUsers[i], users_split[[i]])
+  assign(xsample[i], users_split[[i]])
+  
 }
+  return(ggplot(x, aes(x = Day, fill = factor(order_hour_of_day))) + geom_bar() + theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle(paste(xsample[[i]], "bbb")))
+  #return(x)
+}
+```
 
-User_26128
+```{r}
+circle <- function(x){
+for (i in 1:length(users_split)) {
+  assign(xsample[i], users_split[[i]])
+  
+}
+  
+  return(x %>% mutate(timeline = cumsum(x$days_since_prior_order)))
+ 
+}
+```
+
+```{r}
+rectangle <- function(x){
+for (i in 1:length(users_split)) {
+  assign(xsample[i], users_split[[i]])
+  
+}
+  
+  return(ggplot(x%>% mutate(timeline = cumsum(x$days_since_prior_order)), aes(x = timeline, y = order_dow)) + geom_line() + geom_point())
+  
+ 
+}
+```
+
+
+```{r}
+square(User_96)
+circle(User_96)
+rectangle(User_96)
+```
+
+
+```{r}
+circle(User_78)
+#hist(User_88$order_dow, main = "Freq DOW")
+
+#mean(User_89$days_since_prior_order)
 ```
 
 
@@ -168,35 +217,9 @@ sampleUsers <- sample_n(m, 10)
 Want to make an interactive dataset where a customer's activity can be isolated from the others and it will show all of their orders. 
 
 
-for(i in unique(UniqueData$State)){
-  
-  
-  newDS <- UniqueData %>% filter(State == i)
-  
-  print(head(newDS))
-  hist(newDS$Number.of.Prescriptions, main = paste(i, "'s Rx Frequency"))
-  identify(newDS$Number.of.Prescriptions)
-  
-  
-}
-
-```{r}
-# User_ID <- unique(m$user_id)
-# for(i in 1:length(m$user_id)){
-#   newDSm <- m[m$user_id == UserID[i],]
-#   identity(newDSm$days_since_prior_order)
-#   
-#   
-# }
-```
-
-
-
-
 ###Number of times each product is entered in the dataset
 
 There are 32,434,489 entries in this dataset. There are 49,667 items that get reordered. 
-
 
 
 ```{r}
